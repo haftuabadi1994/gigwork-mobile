@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "GigWork",
+    "slug": "gigwork",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "et.gigwork.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "947f8197-ff9d-4d9b-9947-b4ee4ce59660"
+      }
+    }
+  }
+}
