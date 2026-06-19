@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { Card, Avatar, Row, EmptyState, StatCard } from '../../components/UI';
 import { Colors, Spacing, Radius } from '../../utils/theme';
 import api from '../../utils/api';
@@ -9,7 +10,7 @@ import api from '../../utils/api';
 const LEVEL_COLORS = Colors.levels;
 const TIER_COLORS  = { A: '#10B981', B: '#3B82F6', C: '#8B5CF6' };
 
-function MemberCard({ u, tier, referredByName }) {
+function MemberCard({ u, tier, referredByName, t }) {
   const levelColor = LEVEL_COLORS[u.level] || Colors.text3;
   const sevenDaysAgo = new Date(Date.now() - 7 * 864e5);
   const isActive = u.lastActiveAt && new Date(u.lastActiveAt) > sevenDaysAgo;
@@ -28,7 +29,7 @@ function MemberCard({ u, tier, referredByName }) {
             </View>
           </Row>
           <Text style={styles.memberMeta}>
-            {u.tasksCompleted} tasks · <Text style={{ color: levelColor, fontWeight: '600', textTransform: 'uppercase' }}>{u.level}</Text>
+            {u.tasksCompleted} {t('tasks')} · <Text style={{ color: levelColor, fontWeight: '600', textTransform: 'uppercase' }}>{u.level}</Text>
             {referredByName ? ` · via ${referredByName}` : ''}
           </Text>
         </View>
@@ -40,6 +41,7 @@ function MemberCard({ u, tier, referredByName }) {
 
 export default function TeamScreen({ navigation }) {
   const { fmt } = useCurrency();
+  const { t, language, toggle } = useLanguage();
   const [data, setData]       = useState(null);
   const [leaders, setLeaders] = useState([]);
   const [tab, setTab]         = useState('tree');
@@ -47,24 +49,31 @@ export default function TeamScreen({ navigation }) {
 
   const load = async () => {
     try {
-      const [t, l] = await Promise.all([api.get('/team/stats'), api.get('/team/leaderboard')]);
-      setData(t.data);
-      setLeaders(l.data.leaderboard);
+      const [statsRes, leadersRes] = await Promise.all([api.get('/team/stats'), api.get('/team/leaderboard')]);
+      setData(statsRes.data);
+      setLeaders(leadersRes.data.leaderboard);
     } catch (e) { console.error(e); }
     finally { setRefreshing(false); }
   };
 
   useEffect(() => { load(); }, []);
 
-  if (!data) return <View style={styles.center}><Text style={{ color: Colors.text3 }}>Loading…</Text></View>;
+  if (!data) return <View style={styles.center}><Text style={{ color: Colors.text3 }}>{t('loading')}</Text></View>;
 
   const { summary, levelA, levelB, levelC } = data;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.heading}>My team</Text>
-        <Text style={styles.sub}>Your network overview</Text>
+        <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={styles.heading}>{t('team')}</Text>
+            <Text style={styles.sub}>{t('yourNetwork')}</Text>
+          </View>
+          <TouchableOpacity onPress={toggle} style={styles.langBtn}>
+            <Text style={styles.langBtnText}>{language === 'en' ? 'አማ' : 'ENG'}</Text>
+          </TouchableOpacity>
+        </Row>
       </View>
 
       <ScrollView
@@ -74,28 +83,28 @@ export default function TeamScreen({ navigation }) {
       >
         {/* Team income card */}
         <View style={[styles.incomeCard, { backgroundColor: Colors.primary }]}>
-          <Text style={styles.incomeLabel}>Team income today</Text>
+          <Text style={styles.incomeLabel}>{t('teamIncomeToday')}</Text>
           <Text style={styles.incomeValue}>{fmt(summary.teamEarningsToday)}</Text>
-          <Text style={styles.incomeSub}>From {summary.totalMembers} members</Text>
+          <Text style={styles.incomeSub}>{t('fromMembers').replace('{n}', summary.totalMembers)}</Text>
         </View>
 
         {/* Stats */}
         <View style={styles.statsRow}>
-          <StatCard label="Total" value={summary.totalMembers} />
-          <StatCard label="Active (7d)" value={summary.activeMembers} />
-          <StatCard label="Direct" value={summary.directReferrals} />
+          <StatCard label={t('totalMembers')} value={summary.totalMembers} />
+          <StatCard label={t('active7d')} value={summary.activeMembers} />
+          <StatCard label={t('direct')} value={summary.directReferrals} />
         </View>
 
         {/* Tier breakdown */}
         <View style={styles.tierRow}>
           {[
-            { label: 'Tier A', count: summary.directReferrals, color: TIER_COLORS.A },
-            { label: 'Tier B', count: summary.levelBCount,     color: TIER_COLORS.B },
-            { label: 'Tier C', count: summary.levelCCount,     color: TIER_COLORS.C },
-          ].map(t => (
-            <View key={t.label} style={[styles.tierBox, { backgroundColor: t.color + '18', borderColor: t.color + '40' }]}>
-              <Text style={[styles.tierCount, { color: t.color }]}>{t.count}</Text>
-              <Text style={[styles.tierLabel, { color: t.color }]}>{t.label}</Text>
+            { label: t('tierA'), count: summary.directReferrals, color: TIER_COLORS.A },
+            { label: t('tierB'), count: summary.levelBCount,     color: TIER_COLORS.B },
+            { label: t('tierC'), count: summary.levelCCount,     color: TIER_COLORS.C },
+          ].map(tier => (
+            <View key={tier.label} style={[styles.tierBox, { backgroundColor: tier.color + '18', borderColor: tier.color + '40' }]}>
+              <Text style={[styles.tierCount, { color: tier.color }]}>{tier.count}</Text>
+              <Text style={[styles.tierLabel, { color: tier.color }]}>{tier.label}</Text>
             </View>
           ))}
         </View>
@@ -103,11 +112,11 @@ export default function TeamScreen({ navigation }) {
         {/* Tabs */}
         <View style={styles.tabRow}>
           {[
-            { key: 'tree',        label: '🌳 Team tree' },
-            { key: 'leaderboard', label: '🏆 Leaderboard' },
-          ].map(t => (
-            <TouchableOpacity key={t.key} style={[styles.tabBtn, tab === t.key && styles.tabActive]} onPress={() => setTab(t.key)}>
-              <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>{t.label}</Text>
+            { key: 'tree',        label: t('teamTree') },
+            { key: 'leaderboard', label: t('leaderboard') },
+          ].map(tb => (
+            <TouchableOpacity key={tb.key} style={[styles.tabBtn, tab === tb.key && styles.tabActive]} onPress={() => setTab(tb.key)}>
+              <Text style={[styles.tabText, tab === tb.key && styles.tabTextActive]}>{tb.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -116,26 +125,26 @@ export default function TeamScreen({ navigation }) {
         {tab === 'tree' && (
           <>
             {levelA.length === 0 ? (
-              <EmptyState icon="👥" title="No team members yet" subtitle="Share your referral code to grow your team"
-                action="Invite friends" onAction={() => navigation.navigate('Invite')} />
+              <EmptyState icon="👥" title={t('noTeamYet')} subtitle={t('noTeamYetSub')}
+                action={t('inviteFriends')} onAction={() => navigation.navigate('Invite')} />
             ) : (
               <>
                 {levelA.length > 0 && (
                   <View>
-                    <Text style={styles.tierHeader}>Tier A — Direct ({levelA.length})</Text>
-                    {levelA.map(u => <MemberCard key={u._id} u={u} tier="A" />)}
+                    <Text style={styles.tierHeader}>{t('tierADirect')} ({levelA.length})</Text>
+                    {levelA.map(u => <MemberCard key={u._id} u={u} tier="A" t={t} />)}
                   </View>
                 )}
                 {levelB.length > 0 && (
                   <View>
-                    <Text style={styles.tierHeader}>Tier B — Level 2 ({levelB.length})</Text>
-                    {levelB.map(u => <MemberCard key={u._id} u={u} tier="B" referredByName={u.referredByName} />)}
+                    <Text style={styles.tierHeader}>{t('tierBLevel2')} ({levelB.length})</Text>
+                    {levelB.map(u => <MemberCard key={u._id} u={u} tier="B" referredByName={u.referredByName} t={t} />)}
                   </View>
                 )}
                 {levelC.length > 0 && (
                   <View>
-                    <Text style={styles.tierHeader}>Tier C — Level 3 ({levelC.length})</Text>
-                    {levelC.map(u => <MemberCard key={u._id} u={u} tier="C" referredByName={u.referredByName} />)}
+                    <Text style={styles.tierHeader}>{t('tierCLevel3')} ({levelC.length})</Text>
+                    {levelC.map(u => <MemberCard key={u._id} u={u} tier="C" referredByName={u.referredByName} t={t} />)}
                   </View>
                 )}
               </>
@@ -147,7 +156,7 @@ export default function TeamScreen({ navigation }) {
         {tab === 'leaderboard' && (
           <>
             {leaders.length === 0 ? (
-              <EmptyState icon="🏆" title="No leaderboard data yet" />
+              <EmptyState icon="🏆" title={t('noLeaderboard')} />
             ) : (
               leaders.map((u, i) => {
                 const levelColor = LEVEL_COLORS[u.level] || Colors.text3;
@@ -158,7 +167,7 @@ export default function TeamScreen({ navigation }) {
                       <Avatar name={u.name} size={38} color={levelColor} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.memberName}>{u.name}</Text>
-                        <Text style={styles.memberMeta}>{u.referralCount} referrals · {u.tasksCompleted} tasks</Text>
+                        <Text style={styles.memberMeta}>{u.referralCount} {t('referrals')} · {u.tasksCompleted} {t('tasks')}</Text>
                       </View>
                       <Text style={styles.memberEarn}>{fmt(u.totalEarnedETB)}</Text>
                     </Row>
@@ -179,6 +188,8 @@ const styles = StyleSheet.create({
   header:     { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, backgroundColor: Colors.surface, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
   heading:    { fontSize: 20, fontWeight: '700', color: Colors.text },
   sub:        { fontSize: 12, color: Colors.text3, marginTop: 2 },
+  langBtn:    { paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg },
+  langBtnText:{ fontSize: 12, fontWeight: '700', color: Colors.text2 },
   incomeCard: { borderRadius: Radius.xl, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.md },
   incomeLabel:{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 4 },
   incomeValue:{ fontSize: 30, fontWeight: '700', color: '#fff' },

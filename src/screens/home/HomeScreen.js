@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Scr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { Card, Badge, Avatar, EmptyState, Row } from '../../components/UI';
 import { Colors, Spacing, Radius } from '../../utils/theme';
 import api from '../../utils/api';
@@ -11,7 +12,7 @@ const CATEGORIES = ['All','Video Rating','Writing','Data Entry','Survey','Delive
 const BADGE_COLORS = { 'Video Rating':'green','Writing':'blue','Data Entry':'gray','Survey':'amber','Delivery':'green','Translation':'blue','Social Engagement':'amber','Content Creation':'blue' };
 const LEVEL_COLORS = Colors.levels;
 
-function TaskCard({ task, onPress, fmt }) {
+function TaskCard({ task, onPress, fmt, t }) {
   const badgeColor = BADGE_COLORS[task.category] || 'gray';
   return (
     <Card onPress={onPress} style={{ marginHorizontal: Spacing.lg, marginBottom: Spacing.sm }}>
@@ -27,10 +28,10 @@ function TaskCard({ task, onPress, fmt }) {
       <Text style={styles.taskTitle}>{task.title}</Text>
       <Text style={styles.taskDesc} numberOfLines={2}>{task.description}</Text>
       {task.workDepositETB > 0 && (
-        <Text style={styles.deposit}>🔒 Work deposit: {fmt(task.workDepositETB)} (refundable)</Text>
+        <Text style={styles.deposit}>🔒 {t('workDeposit')}: {fmt(task.workDepositETB)} ({t('refundable')})</Text>
       )}
       <Row style={{ justifyContent: 'space-between', marginTop: 10 }}>
-        <Text style={styles.taskMeta}>⏱ ~{task.estimatedMinutes}m</Text>
+        <Text style={styles.taskMeta}>⏱ ~{task.estimatedMinutes} {t('estTime')}</Text>
         <Badge
           label={task.myAssignment ? task.myAssignment.status.replace('_', ' ') : 'Available'}
           color={task.myAssignment ? 'green' : 'gray'}
@@ -43,6 +44,7 @@ function TaskCard({ task, onPress, fmt }) {
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const { fmt, currency, setCurrency } = useCurrency();
+  const { t, language, toggle } = useLanguage();
 
   const [tasks, setTasks]           = useState([]);
   const [income, setIncome]         = useState(null);
@@ -55,12 +57,12 @@ export default function HomeScreen({ navigation }) {
   const load = useCallback(async (cat = category) => {
     try {
       const params = cat !== 'All' ? { category: cat } : {};
-      const [t, inc, notif] = await Promise.all([
+      const [t2, inc, notif] = await Promise.all([
         api.get('/tasks', { params }),
         api.get('/income/summary').catch(() => ({ data: null })),
         api.get('/notifications', { params: { limit: 1 } }).catch(() => ({ data: { unreadCount: 0 } })),
       ]);
-      setTasks(t.data.tasks);
+      setTasks(t2.data.tasks);
       if (inc.data) setIncome(inc.data);
       setUnread(notif.data.unreadCount || 0);
     } catch (e) {
@@ -75,14 +77,17 @@ export default function HomeScreen({ navigation }) {
 
   const onRefresh = () => { setRefreshing(true); load(); };
 
-  const levelColor = LEVEL_COLORS[user?.level || 'intern'] || Colors.primary;
+  const levelColor = typeof LEVEL_COLORS[user?.level || 'intern'] === 'object'
+    ? LEVEL_COLORS[user?.level || 'intern'].color
+    : LEVEL_COLORS[user?.level || 'intern'] || Colors.primary;
+
   const todayIncome = income?.todayIncome || 0;
 
   const QUICK_LINKS = [
-    { icon:'💰', label:'Income',   screen:'Income' },
-    { icon:'👥', label:'Team',     screen:'Team' },
-    { icon:'📖', label:'Handbook', screen:'Handbook' },
-    { icon:'📥', label:'Deposit',  screen:'Deposit' },
+    { icon: '💰', label: language === 'am' ? 'ገቢ'    : 'Income',   screen: 'Income' },
+    { icon: '👥', label: language === 'am' ? 'ቡድን'   : 'Team',     screen: 'Team' },
+    { icon: '📖', label: language === 'am' ? 'መምሪያ'  : 'Handbook', screen: 'Handbook' },
+    { icon: '📥', label: language === 'am' ? 'ተቀማጭ' : 'Deposit',  screen: 'Deposit' },
   ];
 
   const ListHeader = () => (
@@ -93,56 +98,98 @@ export default function HomeScreen({ navigation }) {
         </View>
       )}
 
-      <TouchableOpacity style={[styles.incomeCard, { backgroundColor: Colors.primary }]} onPress={() => navigation.navigate('Income')} activeOpacity={0.9}>
+      {/* Income card */}
+      <TouchableOpacity
+        style={[styles.incomeCard, { backgroundColor: Colors.primary }]}
+        onPress={() => navigation.navigate('Income')}
+        activeOpacity={0.9}
+      >
         <View>
-          <Text style={styles.incomeLabel}>Today's income</Text>
+          <Text style={styles.incomeLabel}>{t('todayIncome')}</Text>
           <Text style={styles.incomeValue}>{fmt(todayIncome)}</Text>
-          <Text style={styles.incomeHint}>Recommended: {fmt(income?.recommendedDailyIncome || 0)}/day →</Text>
+          <Text style={styles.incomeHint}>
+            {t('recommended')}: {fmt(income?.recommendedDailyIncome || 0)}/day →
+          </Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.incomeLabel}>Balance</Text>
+          <Text style={styles.incomeLabel}>{t('balance')}</Text>
           <Text style={styles.incomeBalance}>{fmt(user?.incomeWalletETB || 0)}</Text>
-          <TouchableOpacity onPress={() => setCurrency(currency === 'ETB' ? 'USD' : 'ETB')} style={styles.curToggle}>
-            <Text style={styles.curToggleText}>{currency === 'ETB' ? 'Show USD' : 'Show ETB'}</Text>
+          <TouchableOpacity
+            onPress={() => setCurrency(currency === 'ETB' ? 'USD' : 'ETB')}
+            style={styles.curToggle}
+          >
+            <Text style={styles.curToggleText}>
+              {currency === 'ETB' ? t('showUSD') : t('showETB')}
+            </Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
 
+      {/* Quick links */}
       <View style={styles.quickLinks}>
         {QUICK_LINKS.map(q => (
-          <TouchableOpacity key={q.screen} style={styles.quickBtn} onPress={() => navigation.navigate(q.screen)} activeOpacity={0.8}>
+          <TouchableOpacity
+            key={q.screen}
+            style={styles.quickBtn}
+            onPress={() => navigation.navigate(q.screen)}
+            activeOpacity={0.8}
+          >
             <Text style={styles.quickIcon}>{q.icon}</Text>
             <Text style={styles.quickLabel}>{q.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ paddingHorizontal: Spacing.lg, gap: 8 }}>
+      {/* Category chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipScroll}
+        contentContainerStyle={{ paddingHorizontal: Spacing.lg, gap: 8 }}
+      >
         {CATEGORIES.map(c => (
-          <TouchableOpacity key={c} style={[styles.chip, category === c && styles.chipActive]} onPress={() => setCategory(c)}>
+          <TouchableOpacity
+            key={c}
+            style={[styles.chip, category === c && styles.chipActive]}
+            onPress={() => setCategory(c)}
+          >
             <Text style={[styles.chipText, category === c && styles.chipTextActive]}>{c}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       <View style={styles.taskHeader}>
-        <Text style={styles.taskHeaderText}>Available tasks</Text>
-        <Text style={styles.taskCount}>{tasks.length} found</Text>
+        <Text style={styles.taskHeaderText}>{t('availableTasks')}</Text>
+        <Text style={styles.taskCount}>{tasks.length} {t('found')}</Text>
       </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* Top bar */}
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.greeting}>Hi, {user?.name?.split(' ')[0]} 👋</Text>
+          <Text style={styles.greeting}>
+            {t('greeting')}, {user?.name?.split(' ')[0]} 👋
+          </Text>
           <Text style={styles.levelText}>
-            <Text style={{ color: levelColor, fontWeight: '700' }}>{(user?.level || 'intern').toUpperCase()}</Text>
-            {income?.rule ? `  ·  ${income.rule.taskCountPerDay} tasks/day` : ''}
+            <Text style={{ color: levelColor, fontWeight: '700' }}>
+              {(user?.level || 'intern').toUpperCase()}
+            </Text>
+            {income?.rule ? `  ·  ${income.rule.taskCountPerDay} ${t('tasksPerDay')}` : ''}
           </Text>
         </View>
         <Row style={{ gap: 12 }}>
+
+          {/* Language toggle */}
+          <TouchableOpacity onPress={toggle} style={styles.langBtn}>
+            <Text style={styles.langBtnText}>
+              {language === 'en' ? 'አማ' : 'ENG'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Notifications */}
           <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.bellWrap}>
             <Text style={{ fontSize: 22 }}>🔔</Text>
             {unread > 0 && (
@@ -151,6 +198,8 @@ export default function HomeScreen({ navigation }) {
               </View>
             )}
           </TouchableOpacity>
+
+          {/* Avatar */}
           <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
             <Avatar name={user?.name} size={36} color={Colors.primary} />
           </TouchableOpacity>
@@ -159,15 +208,28 @@ export default function HomeScreen({ navigation }) {
 
       <FlatList
         data={tasks}
-        keyExtractor={t => t._id}
+        keyExtractor={item => item._id}
         renderItem={({ item }) => (
-          <TaskCard task={item} fmt={fmt} onPress={() => navigation.navigate('TaskDetail', { taskId: item._id })} />
+          <TaskCard
+            task={item}
+            fmt={fmt}
+            t={t}
+            onPress={() => navigation.navigate('TaskDetail', { taskId: item._id })}
+          />
         )}
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={
-          !loading && <EmptyState icon="📋" title="No tasks in this category" subtitle="Try a different category or check back later" />
+          !loading && (
+            <EmptyState
+              icon="📋"
+              title={t('noTasks')}
+              subtitle={t('noTasksSub')}
+            />
+          )
         }
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       />
@@ -180,6 +242,8 @@ const styles = StyleSheet.create({
   topBar:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, backgroundColor: Colors.surface, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
   greeting:        { fontSize: 17, fontWeight: '600', color: Colors.text },
   levelText:       { fontSize: 12, color: Colors.text3, marginTop: 2 },
+  langBtn:         { paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
+  langBtnText:     { fontSize: 12, fontWeight: '700', color: Colors.text },
   bellWrap:        { position: 'relative' },
   badge:           { position: 'absolute', top: -4, right: -4, backgroundColor: Colors.red, borderRadius: 10, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   badgeText:       { fontSize: 9, color: '#fff', fontWeight: '700' },
