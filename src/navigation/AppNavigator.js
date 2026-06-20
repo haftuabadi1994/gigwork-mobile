@@ -20,6 +20,7 @@ import DepositScreen       from '../screens/wallet/DepositScreen';
 import TeamScreen          from '../screens/team/TeamScreen';
 import ProfileScreen       from '../screens/profile/ProfileScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
+import CommissionsScreen   from '../screens/team/CommissionsScreen';
 
 // Lazy-load remaining screens
 const IncomeDashboard = require('../screens/home/IncomeDashboardScreen').default;
@@ -151,8 +152,9 @@ function TeamStack() {
   const { t } = useLanguage();
   return (
     <Stack.Navigator screenOptions={screenOpts}>
-      <Stack.Screen name="TeamScreen" component={TeamScreen}   options={{ headerShown: false }} />
-      <Stack.Screen name="Invite"     component={InviteScreen} options={{ title: t('shareEarn'), ...headerOpts }} />
+      <Stack.Screen name="TeamScreen"   component={TeamScreen}         options={{ headerShown: false }} />
+      <Stack.Screen name="Invite"       component={InviteScreen}       options={{ title: t('shareEarn'),    ...headerOpts }} />
+      <Stack.Screen name="Commissions"  component={CommissionsScreen}  options={{ title: 'Commissions',     ...headerOpts }} />
     </Stack.Navigator>
   );
 }

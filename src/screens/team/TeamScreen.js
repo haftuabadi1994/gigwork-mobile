@@ -70,9 +70,18 @@ export default function TeamScreen({ navigation }) {
             <Text style={styles.heading}>{t('team')}</Text>
             <Text style={styles.sub}>{t('yourNetwork')}</Text>
           </View>
-          <TouchableOpacity onPress={toggle} style={styles.langBtn}>
-            <Text style={styles.langBtnText}>{language === 'en' ? 'አማ' : 'ENG'}</Text>
-          </TouchableOpacity>
+          <Row style={{ gap: 8 }}>
+            {/* Commissions shortcut */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Commissions')}
+              style={styles.commBtn}
+            >
+              <Text style={styles.commBtnText}>💸 Commissions</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={toggle} style={styles.langBtn}>
+              <Text style={styles.langBtnText}>{language === 'en' ? 'አማ' : 'ENG'}</Text>
+            </TouchableOpacity>
+          </Row>
         </Row>
       </View>
 
@@ -108,6 +117,19 @@ export default function TeamScreen({ navigation }) {
             </View>
           ))}
         </View>
+
+        {/* Commission summary banner */}
+        <TouchableOpacity
+          style={styles.commBanner}
+          onPress={() => navigation.navigate('Commissions')}
+          activeOpacity={0.8}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.commBannerTitle}>💸 Commission earnings</Text>
+            <Text style={styles.commBannerSub}>View your referral bonus transactions and tier rates</Text>
+          </View>
+          <Text style={styles.commBannerArrow}>›</Text>
+        </TouchableOpacity>
 
         {/* Tabs */}
         <View style={styles.tabRow}>
@@ -183,33 +205,39 @@ export default function TeamScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe:       { flex: 1, backgroundColor: Colors.bg },
-  center:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header:     { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, backgroundColor: Colors.surface, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
-  heading:    { fontSize: 20, fontWeight: '700', color: Colors.text },
-  sub:        { fontSize: 12, color: Colors.text3, marginTop: 2 },
-  langBtn:    { paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg },
-  langBtnText:{ fontSize: 12, fontWeight: '700', color: Colors.text2 },
-  incomeCard: { borderRadius: Radius.xl, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.md },
-  incomeLabel:{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 4 },
-  incomeValue:{ fontSize: 30, fontWeight: '700', color: '#fff' },
-  incomeSub:  { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
-  statsRow:   { flexDirection: 'row', gap: 10, marginBottom: Spacing.md },
-  tierRow:    { flexDirection: 'row', gap: 10, marginBottom: Spacing.md },
-  tierBox:    { flex: 1, borderWidth: 1.5, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center' },
-  tierCount:  { fontSize: 22, fontWeight: '700' },
-  tierLabel:  { fontSize: 11, fontWeight: '600', marginTop: 2 },
-  tabRow:     { flexDirection: 'row', gap: 8, marginBottom: Spacing.md },
-  tabBtn:     { flex: 1, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: Colors.surface, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
-  tabActive:  { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  tabText:    { fontSize: 13, fontWeight: '500', color: Colors.text2 },
-  tabTextActive: { color: '#fff' },
-  tierHeader: { fontSize: 13, fontWeight: '600', color: Colors.text2, marginBottom: 10, marginTop: 8 },
-  activeDot:  { position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: Colors.surface },
-  memberName: { fontSize: 14, fontWeight: '600', color: Colors.text },
-  memberMeta: { fontSize: 12, color: Colors.text3, marginTop: 2 },
-  memberEarn: { fontSize: 13, fontWeight: '700', color: Colors.primary },
-  tierPill:   { borderRadius: Radius.full, paddingHorizontal: 7, paddingVertical: 2 },
-  tierText:   { fontSize: 10, fontWeight: '700' },
-  rank:       { fontSize: 16, fontWeight: '700', width: 28, textAlign: 'center' },
+  safe:            { flex: 1, backgroundColor: Colors.bg },
+  center:          { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  header:          { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, backgroundColor: Colors.surface, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
+  heading:         { fontSize: 20, fontWeight: '700', color: Colors.text },
+  sub:             { fontSize: 12, color: Colors.text3, marginTop: 2 },
+  langBtn:         { paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg },
+  langBtnText:     { fontSize: 12, fontWeight: '700', color: Colors.text2 },
+  commBtn:         { paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.primary, backgroundColor: Colors.primaryLight },
+  commBtnText:     { fontSize: 12, fontWeight: '700', color: Colors.primaryDark },
+  commBanner:      { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primaryLight, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.md, borderWidth: 1, borderColor: Colors.primary + '30' },
+  commBannerTitle: { fontSize: 14, fontWeight: '700', color: Colors.primaryDark, marginBottom: 2 },
+  commBannerSub:   { fontSize: 12, color: Colors.primaryDark, opacity: 0.75 },
+  commBannerArrow: { fontSize: 24, color: Colors.primary, fontWeight: '300' },
+  incomeCard:      { borderRadius: Radius.xl, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.md },
+  incomeLabel:     { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 4 },
+  incomeValue:     { fontSize: 30, fontWeight: '700', color: '#fff' },
+  incomeSub:       { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
+  statsRow:        { flexDirection: 'row', gap: 10, marginBottom: Spacing.md },
+  tierRow:         { flexDirection: 'row', gap: 10, marginBottom: Spacing.md },
+  tierBox:         { flex: 1, borderWidth: 1.5, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center' },
+  tierCount:       { fontSize: 22, fontWeight: '700' },
+  tierLabel:       { fontSize: 11, fontWeight: '600', marginTop: 2 },
+  tabRow:          { flexDirection: 'row', gap: 8, marginBottom: Spacing.md },
+  tabBtn:          { flex: 1, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: Colors.surface, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  tabActive:       { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  tabText:         { fontSize: 13, fontWeight: '500', color: Colors.text2 },
+  tabTextActive:   { color: '#fff' },
+  tierHeader:      { fontSize: 13, fontWeight: '600', color: Colors.text2, marginBottom: 10, marginTop: 8 },
+  activeDot:       { position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: Colors.surface },
+  memberName:      { fontSize: 14, fontWeight: '600', color: Colors.text },
+  memberMeta:      { fontSize: 12, color: Colors.text3, marginTop: 2 },
+  memberEarn:      { fontSize: 13, fontWeight: '700', color: Colors.primary },
+  tierPill:        { borderRadius: Radius.full, paddingHorizontal: 7, paddingVertical: 2 },
+  tierText:        { fontSize: 10, fontWeight: '700' },
+  rank:            { fontSize: 16, fontWeight: '700', width: 28, textAlign: 'center' },
 });
